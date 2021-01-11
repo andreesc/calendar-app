@@ -1,11 +1,11 @@
 import Modal from 'react-modal';
 import DateTimePicker from "react-datetime-picker";
 import moment from "moment";
-import {useState} from "react";
+import {useEffect, useState} from "react";
 import Swal from 'sweetalert2';
 import {useDispatch, useSelector} from "react-redux";
 import {uiCloseModal} from "../../actions/modal";
-import {eventAddNew} from "../../actions/events";
+import {clearActiveEvent, eventAddNew, eventUpdated} from "../../actions/events";
 
 const customStyles = {
     content: {
@@ -23,23 +23,35 @@ Modal.setAppElement('#root');
 const now = moment().minutes(0).seconds(0).add(1, 'hours');
 const endDate = now.clone().add(1, 'hours');
 
+const initEvent = {
+    title: '',
+    notes: '',
+    start: now.toDate(),
+    end: endDate.toDate()
+}
+
+
 function CalendarModal () {
 
     const {modalOpen} = useSelector(state => state.ui);
+    const {activeEvent} = useSelector(state => state.calendar);
     const dispatch = useDispatch();
 
     const [dateStart, setDateStart] = useState(now.toDate());
     const [dateEnd, setDateEnd] = useState(endDate.toDate());
     const [titleValid, setTitleValid] = useState(true);
 
-    const [formValues, setFormValues] = useState({
-        title: 'Evento',
-        notes: '',
-        start: now.toDate(),
-        end: endDate.toDate()
-    });
+    const [formValues, setFormValues] = useState(initEvent);
 
     const {title, notes, start, end} = formValues;
+
+    useEffect(() => {
+        if (activeEvent) {
+            setFormValues(activeEvent);
+        } else {
+            setFormValues(initEvent);
+        }
+    }, [activeEvent, setFormValues]);
 
     const handleInputChange = ({target}) => {
         setFormValues({
@@ -63,15 +75,18 @@ function CalendarModal () {
             return setTitleValid(false);
         }
 
-        // todo: save in database
-        dispatch(eventAddNew({
-            ...formValues,
-            id: new Date().getTime(),
-            user: {
-                _id: 12391,
-                name: "Marcos"
-            }
-        }));
+        if (activeEvent) {
+            dispatch(eventUpdated(formValues));
+        } else {
+            dispatch(eventAddNew({
+                ...formValues,
+                id: new Date().getTime(),
+                user: {
+                    _id: 12391,
+                    name: "Marcos"
+                }
+            }));
+        }
 
         setTitleValid(true);
         closeModal();
@@ -80,6 +95,8 @@ function CalendarModal () {
 
     const closeModal = () => {
         dispatch(uiCloseModal());
+        setFormValues(initEvent);
+        dispatch(clearActiveEvent());
     }
 
     const handleStartDateChange = (e) => {
