@@ -125,7 +125,7 @@ function CalendarModal () {
             className="modal"
             overlayClassName="modal-fondo"
         >
-            <h1> Nuevo evento </h1>
+            <h1> { activeEvent ? 'Editando evento' : 'Crear evento' } </h1>
             <hr />
             <form
                 onSubmit={handleSubmitForm}
